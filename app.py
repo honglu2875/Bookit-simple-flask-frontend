@@ -16,7 +16,7 @@ ACCESS_TOKEN_URI = 'https://www.googleapis.com/oauth2/v4/token'
 AUTHORIZATION_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events'
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
-REDIRECT_URI = os.environ.get("REDIRECT_URI")
+REDIRECT_URI = "http://localhost:8080/auth"
 
 get_time_url = f"http://localhost:8080/api/get_timeslot?email={email}&maxDays=90&token="
 force_sync_url = f"http://localhost:8080/api/backend/force_sync?email={email}"
