@@ -1,19 +1,26 @@
-from flask import Flask
-from flask import request
-from flask import render_template
+import flask
+from authlib.integrations.requests_client import OAuth2Session
 import os
 import base64
 import psycopg2
 import requests
 
 
-app = Flask(__name__)
+app = flask.Flask(__name__)
+app.secret_key = "abcdefg"
 postgres_username = os.environ.get("POSTGRES_USERNAME")
 postgres_password = os.environ.get("POSTGRES_PASSWORD")
-email = <EMAIL>
+email = os.environ.get("EMAIL")
+AUTHORIZATION_URL = 'https://accounts.google.com/o/oauth2/v2/auth?access_type=offline&prompt=consent'
+ACCESS_TOKEN_URI = 'https://www.googleapis.com/oauth2/v4/token'
+AUTHORIZATION_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events'
+CLIENT_ID = os.environ.get("CLIENT_ID")
+CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
+REDIRECT_URI = os.environ.get("REDIRECT_URI")
 
 get_time_url = f"http://localhost:8080/api/get_timeslot?email={email}&maxDays=90&token="
 force_sync_url = f"http://localhost:8080/api/backend/force_sync?email={email}"
+add_user_url = f"http://localhost:8080/api/backend/add_user"
 
 
 def get_token():
@@ -40,11 +47,45 @@ sToken = get_schedule_token()
 def calendar():
     resp = requests.post(url=force_sync_url, headers={"Authorization": "Basic "+token})
     data = requests.get(url=get_time_url+sToken).json()
-    return render_template('index.html', data=data)
+    return flask.render_template('index.html', data=data)
 
 
 @app.route("/add_event", methods=['POST'])
 def add_event():
-    data = request.get_json()
+    data = flask.request.get_json()
     print(requests.post("http://localhost:8080/api/add_event", json=data))
     return ""
+
+@app.route("/login")
+def login():
+    session = OAuth2Session(CLIENT_ID, CLIENT_SECRET,
+                            scope=AUTHORIZATION_SCOPE,
+                            redirect_uri=REDIRECT_URI)
+  
+    uri, state = session.create_authorization_url(AUTHORIZATION_URL)
+
+    flask.session['auth_state'] = state
+    flask.session.permanent = True
+
+    return flask.redirect(uri, code=302)
+
+@app.route("/auth")
+def auth():
+    req_state = flask.request.args.get('state', default=None, type=None)
+
+    if req_state != flask.session['auth_state']:
+        response = flask.make_response('Invalid state parameter', 401)
+        return response
+
+    session = OAuth2Session(CLIENT_ID, CLIENT_SECRET,
+            scope=AUTHORIZATION_SCOPE,
+            redirect_uri=REDIRECT_URI)
+    
+    oauth2_tokens = session.fetch_token(ACCESS_TOKEN_URI,authorization_response=flask.request.url)
+    refresh_token = oauth2_tokens['refresh_token']
+
+    print(oauth2_tokens)
+    body = {"email": email, "refreshToken": refresh_token}
+    resp = requests.post(url=add_user_url, headers={"Authorization": "Basic "+token}, json=body)
+    
+    return resp.content
