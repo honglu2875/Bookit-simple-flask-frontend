@@ -17,14 +17,16 @@ AUTHORIZATION_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly https:/
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
 REDIRECT_URI = "http://localhost:8080/auth"
+BACKEND_ADDR = os.environ.get("BACKEND_ADDR")
+DB_ADDR = os.environ.get("DB_ADDR")
 
-get_time_url = f"http://localhost:8080/api/get_timeslot?email={email}&maxDays=90&token="
-force_sync_url = f"http://localhost:8080/api/backend/force_sync?email={email}"
-add_user_url = f"http://localhost:8080/api/backend/add_user"
-
+get_time_url = f"{BACKEND_ADDR}/api/get_timeslot?email={email}&maxDays=90&token="
+force_sync_url = f"{BACKEND_ADDR}/api/backend/force_sync?email={email}"
+add_user_url = f"{BACKEND_ADDR}/api/backend/add_user"
+add_event_url = f"{BACKEND_ADDR}/api/add_event"
 
 def get_token():
-    with psycopg2.connect(host="localhost", dbname="data", user=postgres_username, password=postgres_password) as conn:
+    with psycopg2.connect(host=DB_ADDR, dbname="data", user=postgres_username, password=postgres_password) as conn:
         cur = conn.cursor()
         cur.execute("select * from api_token;")
         tk = base64.b64encode(bytearray(str.encode(cur.fetchall()[0][2]))).decode()
@@ -32,7 +34,7 @@ def get_token():
 
 
 def get_schedule_token():
-    with psycopg2.connect(host="localhost", dbname="data", user=postgres_username, password=postgres_password) as conn:
+    with psycopg2.connect(host=DB_ADDR, dbname="data", user=postgres_username, password=postgres_password) as conn:
         cur = conn.cursor()
         cur.execute(f"select * from schedule_type where host_email='{email}';")
         tk = cur.fetchall()[-1][5]
@@ -53,7 +55,7 @@ def calendar():
 @app.route("/add_event", methods=['POST'])
 def add_event():
     data = flask.request.get_json()
-    print(requests.post("http://localhost:8080/api/add_event", json=data))
+    print(requests.post(add_event_url, json=data))
     return ""
 
 @app.route("/login")
