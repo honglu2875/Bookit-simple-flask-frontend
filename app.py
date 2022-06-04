@@ -40,13 +40,26 @@ def get_schedule_token():
         tk = cur.fetchall()[-1][5]
     return tk
 
+token = None
+sToken = None
 
-token = get_token()
-sToken = get_schedule_token()
+def get_all_tokens():
+    if token is not None and sToken is not None:
+        return True
+    try:
+        token = get_token()
+        sToken = get_schedule_token()
+    except:
+        return False
+    return True
 
+get_all_tokens()
 
 @app.route("/")
 def calendar():
+    if not get_all_tokens():
+        return "Server not ready."
+
     resp = requests.post(url=force_sync_url, headers={"Authorization": "Basic "+token})
     data = requests.get(url=get_time_url+sToken).json()
     return flask.render_template('index.html', data=data)
