@@ -8,7 +8,7 @@ import requests
 
 app = flask.Flask(__name__)
 app.secret_key = "abcdefg"
-postgres_username = os.environ.get("POSTGRES_USERNAME")
+postgres_username = os.environ.get("POSTGRES_USER")
 postgres_password = os.environ.get("POSTGRES_PASSWORD")
 email = os.environ.get("EMAIL")
 AUTHORIZATION_URL = 'https://accounts.google.com/o/oauth2/v2/auth?access_type=offline&prompt=consent'
