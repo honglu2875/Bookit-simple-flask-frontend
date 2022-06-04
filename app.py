@@ -40,24 +40,28 @@ def get_schedule_token():
         tk = cur.fetchall()[-1][5]
     return tk
 
-token = None
-sToken = None
 
 def get_all_tokens():
+    token = flask.session['token'] if 'token' in flask.session else None
+    sToken = flask.session['sToken'] if 'sToken' in flask.session else None
+    
     if token is not None and sToken is not None:
-        return True
+        return token, sToken
     try:
         token = get_token()
         sToken = get_schedule_token()
     except:
-        return False
-    return True
+        return None, None
+    return token, sToken
 
-get_all_tokens()
 
 @app.route("/")
 def calendar():
-    if not get_all_tokens():
+    flask.session['token'], flask.session['sToken'] = get_all_tokens()
+    
+    token = flask.session['token']
+    sToken = flask.session['sToken']
+    if token is None or sToken is None:    
         return "Server not ready."
 
     resp = requests.post(url=force_sync_url, headers={"Authorization": "Basic "+token})
@@ -101,6 +105,6 @@ def auth():
 
     print(oauth2_tokens)
     body = {"email": email, "refreshToken": refresh_token}
-    resp = requests.post(url=add_user_url, headers={"Authorization": "Basic "+token}, json=body)
+    resp = requests.post(url=add_user_url, headers={"Authorization": "Basic "+flask.session['token']}, json=body)
     
     return resp.content
