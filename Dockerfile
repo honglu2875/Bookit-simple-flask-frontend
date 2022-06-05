@@ -5,4 +5,4 @@ RUN apk add --no-cache gcc musl-dev libffi-dev
 ENV FLASK_APP=app.py
 RUN pip install -r requirements.txt
 EXPOSE 5000
-CMD flask run
+CMD flask run --host=0.0.0.0
