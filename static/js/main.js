@@ -170,13 +170,13 @@ function new_booking(event) {
 	        }
 	        else {
 				var data = {
-					hostEmail: "honglu2875@gmail.com",
+					hostEmail: hostEmail,
     				startTime: slot.start_time.toISOString(),
     				endTime: slot.end_time.toISOString(),
     				attendees: [{email: email}],
 					summary: name
 				};
-				console.log(data);
+
 	            $.ajax({
 					url: "/add_event",
 					type: "POST",
@@ -184,6 +184,7 @@ function new_booking(event) {
 					contentType: "application/json",
 					dataType: "json"
 				});
+				window.location.replace("/");
 	        }
 	    });
 }

@@ -15,7 +15,7 @@
 	<body>
         <script>
         var data=JSON.parse('{{ data | tojson | safe}}');
-        console.log(data);
+        var hostEmail='{{ email }}';
         </script>
 	<section class="ftco-section">
 		<div class="container">

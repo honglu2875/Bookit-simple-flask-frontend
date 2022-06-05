@@ -72,7 +72,7 @@ def calendar():
 
     resp = requests.post(url=force_sync_url, headers={"Authorization": "Basic "+token})
     data = requests.get(url=get_time_url+sToken).json()
-    return flask.render_template('index.html', data=data)
+    return flask.render_template('index.html', data=data, email=email)
 
 
 @app.route("/add_event", methods=['POST'])
