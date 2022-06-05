@@ -16,7 +16,7 @@ ACCESS_TOKEN_URI = 'https://www.googleapis.com/oauth2/v4/token'
 AUTHORIZATION_SCOPE = 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events'
 CLIENT_ID = os.environ.get("CLIENT_ID")
 CLIENT_SECRET = os.environ.get("CLIENT_SECRET")
-REDIRECT_URI = "http://localhost:8080/auth"
+REDIRECT_URI = os.environ.get("REDIRECT_URI")
 BACKEND_ADDR = os.environ.get("BACKEND_ADDR")
 DB_ADDR = os.environ.get("DB_ADDR")
 
