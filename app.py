@@ -24,6 +24,8 @@ get_time_url = f"{BACKEND_ADDR}/api/get_timeslot?email={email}&maxDays=90&token=
 force_sync_url = f"{BACKEND_ADDR}/api/backend/force_sync?email={email}"
 add_user_url = f"{BACKEND_ADDR}/api/backend/add_user"
 add_event_url = f"{BACKEND_ADDR}/api/add_event"
+add_schedule_token_url = f"{BACKEND_ADDR}/api/backend/add_schedule_type"
+
 
 def get_token():
     with psycopg2.connect(host=DB_ADDR, dbname="data", user=postgres_username, password=postgres_password) as conn:
@@ -44,24 +46,28 @@ def get_schedule_token():
 def get_all_tokens():
     token = flask.session['token'] if 'token' in flask.session else None
     sToken = flask.session['sToken'] if 'sToken' in flask.session else None
-    
+
     if token is not None and sToken is not None:
         return token, sToken
     try:
         token = get_token()
+    except:
+        token = None
+
+    try:
         sToken = get_schedule_token()
     except:
-        return None, None
+        sToken = None
     return token, sToken
 
 
 @app.route("/")
 def calendar():
     flask.session['token'], flask.session['sToken'] = get_all_tokens()
-    
+
     token = flask.session['token']
     sToken = flask.session['sToken']
-    if token is None or sToken is None:    
+    if token is None or sToken is None:
         return "Server not ready."
 
     resp = requests.post(url=force_sync_url, headers={"Authorization": "Basic "+token})
@@ -75,12 +81,13 @@ def add_event():
     print(requests.post(add_event_url, json=data))
     return ""
 
+
 @app.route("/login")
 def login():
     session = OAuth2Session(CLIENT_ID, CLIENT_SECRET,
                             scope=AUTHORIZATION_SCOPE,
                             redirect_uri=REDIRECT_URI)
-  
+
     uri, state = session.create_authorization_url(AUTHORIZATION_URL)
 
     flask.session['auth_state'] = state
@@ -88,8 +95,14 @@ def login():
 
     return flask.redirect(uri, code=302)
 
+
 @app.route("/auth")
 def auth():
+    token, _ = get_all_tokens()
+    if token is None:
+        return "Server not ready."
+    flask.session['token'] = token
+
     req_state = flask.request.args.get('state', default=None, type=None)
 
     if req_state != flask.session['auth_state']:
@@ -97,14 +110,17 @@ def auth():
         return response
 
     session = OAuth2Session(CLIENT_ID, CLIENT_SECRET,
-            scope=AUTHORIZATION_SCOPE,
-            redirect_uri=REDIRECT_URI)
-    
-    oauth2_tokens = session.fetch_token(ACCESS_TOKEN_URI,authorization_response=flask.request.url)
+                            scope=AUTHORIZATION_SCOPE,
+                            redirect_uri=REDIRECT_URI)
+
+    oauth2_tokens = session.fetch_token(ACCESS_TOKEN_URI, authorization_response=flask.request.url)
     refresh_token = oauth2_tokens['refresh_token']
 
     print(oauth2_tokens)
     body = {"email": email, "refreshToken": refresh_token}
-    resp = requests.post(url=add_user_url, headers={"Authorization": "Basic "+flask.session['token']}, json=body)
-    
+    resp = requests.post(url=add_user_url, headers={
+                         "Authorization": "Basic "+flask.session['token']}, json=body)
+    body = {"email": email, "duration": 60, "description": "my schedule type."}
+    resp = requests.post(url=add_schedule_token_url, headers={
+        "Authorization": "Basic "+flask.session['token']}, json=body)
     return resp.content
